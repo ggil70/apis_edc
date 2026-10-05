@@ -1,0 +1,101 @@
+function obtener_meses_credicard($tarjeta){
+$url = Configure::read('Credicard_Api_Consultar_meses');
+$apiKey = Configure::read('Credicard_Api_Key_header_Consultar_meses');
+
+
+$data = array("cod1" => $tarjeta);
+$payload = json_encode($data);
+
+
+
+// 1. Crear un archivo temporal con el JSON
+$tmpFile = tempnam(sys_get_temp_dir(), 'payload_');
+file_put_contents($tmpFile, $payload);
+
+// 2. Ejecutar curl pasando el archivo con @
+// (Usamos -X GET para mantener tu método GET)
+$cadApiKey = '-H "apikey: ' . $apiKey . '"';
+
+$cmd = 'curl -k -X GET '
+    . $cadApiKey
+    . ' -H "Content-Type: application/json" '
+    . '-d @' . escapeshellarg($tmpFile) . ' '
+    . escapeshellarg($url);
+
+     
+
+   
+$response = shell_exec($cmd);    
+
+
+
+// 3. Borrar el archivo temporal siempre
+if (file_exists($tmpFile)) {
+   unlink($tmpFile);
+}
+
+if ($response !== null) {
+   $resultado = json_decode($response, true);
+          if(isset($resultado['msg']) && !empty($resultado['msg'])){
+            return "2";
+          }
+   return $resultado;
+} else {
+   return "1";     ///-Error en ejecución de cURL";
+}
+}
+
+
+/////////////////////////////////////////////////////
+//Api de movimientos
+function obtener_movimientos_credicard($tarjeta, $fecha){
+
+    header('Content-Type: text/html; charset=utf-8');
+    $url = Configure::read('Credicard_Api_Movimientos');
+    $apiKey = Configure::read('Credicard_Api_Key_header_Movimientos');
+    $cadApiKey = '-H "apikey: ' . $apiKey . '" ';
+
+
+   //Acomodar fecha
+   $arrFecha = explode('-', $fecha);
+   $anio = $arrFecha[0];
+   $mes = $arrFecha[1];
+   $dia = $arrFecha[2];
+
+   //Armar json
+$data = array("cod1" => $tarjeta,
+                 "ano1" => $anio,
+                 "mes1" => $mes,
+                 "dia1" => $dia);
+$payload = json_encode($data);
+
+// 1. Crear un archivo temporal con el JSON
+$tmpFile = tempnam(sys_get_temp_dir(), 'payload_');
+file_put_contents($tmpFile, $payload);
+
+// 2. Ejecutar curl pasando el archivo con @
+// (Usamos -X GET para mantener tu método GET)
+$cmd = 'curl -k -X GET '
+    . $cadApiKey
+    . '-H "Content-Type: application/json" '
+    . '-d @' . escapeshellarg($tmpFile) . ' '
+    . escapeshellarg($url);
+
+$response = shell_exec($cmd);
+
+// 3. Borrar el archivo temporal siempre
+if (file_exists($tmpFile)) {
+   unlink($tmpFile);
+}
+
+if ($response !== null) {
+    $resultado = json_decode($response, true);
+     if(isset($resultado['msg']) && !empty($resultado['msg'])){
+            return "2";
+            }
+    return $resultado;
+
+} else {
+   return "1";     ///-Error en ejecución de cURL";
+}
+}
